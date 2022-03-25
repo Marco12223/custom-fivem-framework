@@ -1,14 +1,19 @@
 Framework                        = {}
 Framework.Player                 = {}
 Framework.LastSkin               = nil
+Framework.skinLoaded             = false
 Framework.isPlayerLoaded         = false
 Framework.RequestId              = 0
 Framework.ServerCallbacks        = {}
 
+AddEventHandler('Framework:getSharedObject', function(cb)
+    cb(Framework)
+end)
+
 function Framework.TriggerServerCallback(name, cb, ...)
     Framework.ServerCallbacks[Framework.RequestId] = cb
 
-    TriggerServerEvent('Framework:triggerServerCallback', name, Core.CurrentRequestId, ...)
+    TriggerServerEvent('Framework:triggerServerCallback', name, Framework.RequestId, ...)
 
     if Framework.RequestId < 65535 then
         Framework.RequestId = Framework.RequestId + 1
@@ -17,19 +22,22 @@ function Framework.TriggerServerCallback(name, cb, ...)
     end
 end
 
+RegisterNetEvent('Framework:serverCallback')
+AddEventHandler('Framework:serverCallback', function(requestId, ...)
+    Framework.ServerCallbacks[requestId](...)
+    Framework.ServerCallbacks[requestId] = nil
+end)
+
 AddEventHandler('playerSpawned', function()
     Citizen.CreateThread(function()
 
         Framework.TriggerServerCallback('skin:getPlayerSkin', function(skin, jobSkin)
             if skin == nil then
-                TriggerEvent("myCreator:openMenu")
-                --TriggerEvent('skinchanger:loadSkin', {sex = 0}, OpenSaveableMenu)
                 Citizen.Wait(100)
-                skinLoaded = true
+                Framework.skinLoaded = true
             else
-                TriggerEvent('skinchanger:loadSkin', skin)
                 Citizen.Wait(100)
-                skinLoaded = true
+                Framework.skinLoaded = true
             end
 
         end)

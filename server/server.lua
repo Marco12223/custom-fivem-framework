@@ -4,6 +4,10 @@ Framework.Jobs                   = {}
 Framework.Items                  = {}
 Framework.ServerCallbacks        = {}
 
+AddEventHandler('Framework:getSharedObject', function(cb)
+    cb(Framework)
+end)
+
 RegisterNetEvent('Framework:onPlayerJoined')
 AddEventHandler('Framework:onPlayerJoined', function()
     while not next(Framework.Jobs) do Wait(50) end
@@ -41,6 +45,8 @@ end
 RegisterServerEvent('Framework:triggerServerCallback')
 AddEventHandler('Framework:triggerServerCallback', function(name, requestId, ...)
     local playerId = source
+
+    print("TriggerServerCallback Triggerd")
 
     Framework.TriggerServerCallback(name, requestId, playerId, function(...)
         TriggerClientEvent('Framework:serverCallback', playerId, requestId, ...)
@@ -90,6 +96,8 @@ Framework.RegisterServerCallback('skin:getPlayerSkin', function(source, cb)
             skin = json.decode(user.skin)
         end
 
-        cb(skin, jobSkin)
+        print("getPlayerSkin Triggerd")
+
+        cb(skin)
     end)
 end)
