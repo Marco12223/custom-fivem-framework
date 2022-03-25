@@ -4,8 +4,8 @@ Framework.Jobs                   = {}
 Framework.Items                  = {}
 Framework.ServerCallbacks        = {}
 
-RegisterNetEvent('esx:onPlayerJoined')
-AddEventHandler('esx:onPlayerJoined', function()
+RegisterNetEvent('Framework:onPlayerJoined')
+AddEventHandler('Framework:onPlayerJoined', function()
     while not next(Framework.Jobs) do Wait(50) end
 
     if not Framework.Players[source] then
@@ -67,3 +67,29 @@ function Framework.GetIdentifier(playerId)
         end
     end
 end
+
+RegisterServerEvent('skin:save')
+AddEventHandler('skin:save', function(skin)
+
+    MySQL.Async.execute('UPDATE users SET `skin` = @skin WHERE identifier = @identifier',
+            {
+                ['@skin']       = json.encode(skin),
+                ['@identifier'] = Framework.GetIdentifier(source)
+            })
+end)
+
+Framework.RegisterServerCallback('skin:getPlayerSkin', function(source, cb)
+
+    MySQL.Async.fetchAll('SELECT skin FROM users WHERE identifier = @identifier', {
+        ['@identifier'] = Framework.GetIdentifier(source)
+    }, function(users)
+        local user = users[1]
+        local skin = nil
+
+        if user.skin ~= nil then
+            skin = json.decode(user.skin)
+        end
+
+        cb(skin, jobSkin)
+    end)
+end)

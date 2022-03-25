@@ -7,9 +7,12 @@ version '1.0.0 Alpha'
 
 client_scripts {
     'client/client.lua',
+    'client/plugins/*.lua',
     'configs/ClientConfig.lua'
 }
+
 server_script {
-    "server/server.lua",
+    'server/server.lua',
+    'server/plugins/*.lua',
     'configs/ClientConfig.lua'
 }
