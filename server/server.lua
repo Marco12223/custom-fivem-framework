@@ -71,17 +71,17 @@ end
 RegisterServerEvent('skin:save')
 AddEventHandler('skin:save', function(skin)
 
-    MySQL.Async.execute('UPDATE users SET `skin` = @skin WHERE identifier = @identifier',
+    MySQL.Async.execute('UPDATE users SET `skin` = @skin WHERE license = @license',
             {
                 ['@skin']       = json.encode(skin),
-                ['@identifier'] = Framework.GetIdentifier(source)
+                ['@license'] = Framework.GetIdentifier(source)
             })
 end)
 
 Framework.RegisterServerCallback('skin:getPlayerSkin', function(source, cb)
 
-    MySQL.Async.fetchAll('SELECT skin FROM users WHERE identifier = @identifier', {
-        ['@identifier'] = Framework.GetIdentifier(source)
+    MySQL.Async.fetchAll('SELECT skin FROM users WHERE license = @license', {
+        ['@license'] = Framework.GetIdentifier(source)
     }, function(users)
         local user = users[1]
         local skin = nil
