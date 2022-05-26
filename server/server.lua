@@ -8,27 +8,22 @@ AddEventHandler('Framework:getSharedObject', function(cb)
     cb(Framework)
 end)
 
-RegisterNetEvent('Framework:onPlayerJoined')
-AddEventHandler('Framework:onPlayerJoined', function()
-    while not next(Framework.Jobs) do Wait(50) end
+AddEventHandler('playerConnecting', function(name, setKickReason, deferrals)
 
-    if not Framework.Players[source] then
-        onPlayerJoined(source)
-    end
-end)
-
-function onPlayerJoined(playerId)
-    local identifier = Framework.GetIdentifier(playerId)
+    local identifier = Framework.GetIdentifier(source)
     if identifier then
         if Framework.GetPlayerFromIdentifier(identifier) then
-            DropPlayer(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
+            CancelEvent()
+            setKickReason(playerId, ('there was an error loading your character!\nError code: identifier-active-ingame\n\nThis error is caused by a player on this server who has the same identifier as you have. Make sure you are not playing on the same Rockstar account.\n\nYour Rockstar identifier: %s'):format(identifier))
         else
             table.insert(Framework.Players, playerId)
         end
     else
-        DropPlayer(playerId, 'there was an error loading your character!\nError code: identifier-missing-ingame\n\nThe cause of this error is not known, your identifier could not be found. Please come back later or report this problem to the server administration team.')
+        CancelEvent()
+        setKickReason(playerId, 'there was an error loading your character!\nError code: identifier-missing-ingame\n\nThe cause of this error is not known, your identifier could not be found. Please come back later or report this problem to the server administration team.')
     end
-end
+
+end)
 
 function Framework.RegisterServerCallback(name, cb)
     Framework.ServerCallbacks[name] = cb
@@ -45,8 +40,6 @@ end
 RegisterServerEvent('Framework:triggerServerCallback')
 AddEventHandler('Framework:triggerServerCallback', function(name, requestId, ...)
     local playerId = source
-
-    print("TriggerServerCallback Triggerd")
 
     Framework.TriggerServerCallback(name, requestId, playerId, function(...)
         TriggerClientEvent('Framework:serverCallback', playerId, requestId, ...)
@@ -84,6 +77,33 @@ AddEventHandler('skin:save', function(skin)
             })
 end)
 
+RegisterServerEvent('Framework:SpawnPlayer')
+AddEventHandler('Framework:SpawnPlayer', function()
+
+    local _source = source
+
+    MySQL.Async.fetchAll('SELECT * FROM users WHERE license = @license', {['@license'] = Framework.GetIdentifier(_source)}, function(result)
+
+        local SpawnCoords = json.decode(result[1].position)
+
+        TriggerClientEvent("Framework:LastPosition", _source, SpawnCoords[1], SpawnCoords[2], SpawnCoords[3])
+
+    end)
+
+end)
+
+RegisterServerEvent('Framework:SavePlayerPosition')
+AddEventHandler('Framework:SavePlayerPosition', function(x, y, z)
+
+    local _source = source
+
+    MySQL.Async.execute('UPDATE users SET `position` = @position WHERE license = @license',
+            {
+                ['@position']       = "{ " .. x .. ", ".. y .. ", " .. z .." }",
+                ['@license'] = Framework.GetIdentifier(_source)
+            })
+end)
+
 Framework.RegisterServerCallback('skin:getPlayerSkin', function(source, cb)
 
     MySQL.Async.fetchAll('SELECT skin FROM users WHERE license = @license', {
@@ -95,8 +115,6 @@ Framework.RegisterServerCallback('skin:getPlayerSkin', function(source, cb)
         if user.skin ~= nil then
             skin = json.decode(user.skin)
         end
-
-        print("getPlayerSkin Triggerd")
 
         cb(skin)
     end)
